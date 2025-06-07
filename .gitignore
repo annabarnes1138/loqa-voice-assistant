@@ -1,0 +1,23 @@
+
+# PlatformIO
+.pio/
+.vscode/
+*.elf
+*.bin
+*.map
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+.env
+.DS_Store
+*.orig
+*.bak
+*.swp
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# Edge Impulse export files
+ei-exported-model/
