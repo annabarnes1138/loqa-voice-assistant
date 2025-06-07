@@ -1,3 +1,4 @@
+![loqa_social_preview_padded_1280x640](https://github.com/user-attachments/assets/99016e57-ace5-4140-a4f3-c49262f83253)
 # Loqa – A Local-First Voice Assistant
 
 **Loqa** is a privacy-first, fully offline-capable voice assistant built around modular smart pucks. It enables responsive, voice-driven interaction **without the cloud**, designed from the ground up for **local-only processing**, **room-level awareness**, and **command chaining**.
