@@ -1,41 +1,32 @@
 ![loqa_social_preview_padded_1280x640](https://github.com/user-attachments/assets/99016e57-ace5-4140-a4f3-c49262f83253)
 # Loqa – A Local-First Voice Assistant
 
-**Loqa** is a privacy-first, fully offline-capable voice assistant built around modular smart pucks. It enables responsive, voice-driven interaction **without the cloud**, designed from the ground up for **local-only processing**, **room-level awareness**, and **command chaining**.
-
-## 🎯 Goals
-
-- Fully local processing (no cloud dependency)
-- Wake word and command chaining supported per room
-- Expandable with low-cost voice puck modules
-- Optional LLM-powered assistant (offline via ESP32)
+**Loqa** (formerly *Rosey*) is a privacy-first, local-only voice assistant that operates entirely offline. It enables natural language interaction without relying on cloud infrastructure, commercial APIs, or internet connectivity—designed from the ground up to be private, modular, and extensible.
 
 ---
 
 ## 🧱 System Architecture
 
-### 🧠 Loqa Prime
-> The brains of the operation. You can deploy one or multiple in your home.
+### 🖥️ Loqa Prime (Server)
+A single backend node responsible for all heavy processing:
 
-- **Device:** M5Stack CoreS3 SE  
-- **Modules:** Built-in mic/speaker, M5Stack LLM Module (UART)
-- **Role:**  
-  - Acts as a command processor
-  - Parses requests from Loqa Lite units
-  - Generates natural language responses locally
-  - Handles high-level command logic
-  - Plays output via onboard speaker
+- **Hardware:** Mini PC (e.g. Beelink SER5)
+- **Responsibilities:**
+  - Wake word registration and routing
+  - Speech-to-text (STT)
+  - Intent parsing and command chaining
+  - Text-to-speech (TTS)
+  - Audio response playback
 
-### 🌿 Loqa Lite
-> Lightweight room modules that trigger wake word detection and relay commands.
+### 🎙️ Loqa Lite (Puck)
+Multiple embedded clients placed in rooms throughout the home:
 
-- **Device:** M5Stack AtomS3R  
-- **Base:** Atomic Echo Base (adds mic + speaker)
-- **Role:**  
-  - Performs **local wake word detection** via Edge Impulse  
-  - On trigger, sends command audio/text to a Loqa Prime  
-  - Optionally plays back Loqa Prime’s audio response (via speaker)
-  - Identifies which room/user issued command
+- **Hardware:** ESP32-S3-based puck + microphone array
+- **Responsibilities:**
+  - Local wake word detection (Edge Impulse)
+  - Record audio on trigger and forward to Loqa Prime
+  - Playback audio response from the server
+  - Designed for near-room-scale voice capture
 
 ---
 
@@ -43,18 +34,26 @@
 
 ```text
 [ Loqa Lite ]
- └─> Wake word detected
- └─> Capture voice / record request
- └─> Send to Loqa Prime (Wi-Fi / UART / TBD)
+ └─> Wake word detected locally
+ └─> Record request audio
+ └─> Transmit to Loqa Prime via Wi-Fi
 
 [ Loqa Prime ]
- └─> Receive request
- └─> Run LLM parsing / command chaining
- └─> Respond with natural language text or audio
-
-[ Loqa Lite ]
- └─> (Optional) Play response via speaker
+ └─> Convert speech to text
+ └─> Parse intent and execute command chain
+ └─> Generate audio response
+ └─> Send audio back to Loqa Lite for playback
 ```
+
+---
+
+## 🌱 Future Plans
+
+- Support for **NSL (Neuro-Symbolic Learning)** to allow Loqa to learn new skills from voice interactions
+- Multi-room context awareness
+- Embedded user identification (voice fingerprinting)
+- Offline skill scripting from natural language
+- Optional local app for configuration and debugging
 
 ---
 
@@ -62,31 +61,23 @@
 
 ```bash
 loqa/
-├── prime/              # CoreS3 SE firmware + LLM interface
-├── lite/               # AtomS3R firmware (wake word, comms)
-├── models/             # Edge Impulse wake word model(s)
-├── docs/               # Architecture, planning notes
+├── prime/              # Server software (Python-based)
+├── lite/               # ESP32 puck firmware (ESP-IDF)
+├── models/             # Edge Impulse wake word models
+├── docs/               # Diagrams, planning notes
 └── README.md
 ```
 
 ---
 
-## 🔧 Tech Stack
+## 🛠️ Tech Stack
 
-- **ESP-IDF + PlatformIO** (both Loqa Prime and Loqa Lite)
-- **Edge Impulse** (wake word model on Lite)
-- **UART + Wi-Fi** (inter-device communication)
-- **LLM Module** (text generation offline, UART to Prime)
-- **Audio I/O** via M5Stack onboard components
-
----
-
-## 🚧 Current Status
-
-- ✅ Hardware selected: CoreS3 SE, AtomS3R, LLM module, Echo Base
-- ⚙️ Wake word model training in progress (Edge Impulse)
-- 🔌 Inter-puck communication prototype in development
-- 🧠 LLM module integration and response playback pending
+- **ESP32-S3** (PlatformIO + ESP-IDF)
+- **Edge Impulse** (wake word inference)
+- **Python 3** (server logic)
+- **ALSA / PulseAudio** (audio output)
+- **MQTT / HTTP** (communication)
+- **Optional LLM module** (future experimentation)
 
 ---
 
@@ -96,4 +87,5 @@ TBD — likely MIT or Apache 2.0
 
 ---
 
-*Created by [Anna Barnes](https://www.linkedin.com/in/annabethbarnes) to prove that powerful, respectful AI doesn’t need the cloud—or a billion-dollar company behind it.*
+*Created by [Anna Barnes](https://www.linkedin.com/in/annabethbarnes) to bring voice assistance back to the edge—where it belongs.*
+
