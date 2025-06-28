@@ -1,23 +1,10 @@
+# Rust
+**/target
 
 # PlatformIO
-.pio/
+.pio
 .vscode/
-*.elf
-*.bin
-*.map
-*.pyc
-*.pyo
-*.pyd
-__pycache__/
-.env
+.pioenvs/
+.pio/libdeps/
+
 .DS_Store
-*.orig
-*.bak
-*.swp
-
-# Logs and temporary files
-*.log
-*.tmp
-
-# Edge Impulse export files
-ei-exported-model/

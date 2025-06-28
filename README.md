@@ -7,16 +7,16 @@
 
 ## 🧱 System Architecture
 
-### 🖥️ Loqa Prime (Server)
+### 🖥️ Loqa Hub (Server)
 A single backend node responsible for all heavy processing:
 
-- **Hardware:** Mini PC (e.g. Beelink SER5)
+- **Hardware:** Mini PC (e.g. Beelink SER5) running Rust-based Axum server
 - **Responsibilities:**
-  - Wake word registration and routing
-  - Speech-to-text (STT)
-  - Intent parsing and command chaining
-  - Text-to-speech (TTS)
-  - Audio response playback
+  - Accepts wake word events from pucks
+  - Handles STT (via Whisper or similar)
+  - Performs intent parsing and command chaining
+  - Generates TTS responses (via Coqui or Silero)
+  - Streams audio response back to puck
 
 ### 🎙️ Loqa Lite (Puck)
 Multiple embedded clients placed in rooms throughout the home:
@@ -61,8 +61,8 @@ Multiple embedded clients placed in rooms throughout the home:
 
 ```bash
 loqa/
-├── prime/              # Server software (Python-based)
-├── lite/               # ESP32 puck firmware (ESP-IDF)
+├── loqa-hub/           # Rust-based server (Axum, STT, NLP, TTS)
+├── puck-fw/            # ESP32 puck firmware (PlatformIO + C++)
 ├── models/             # Edge Impulse wake word models
 ├── docs/               # Diagrams, planning notes
 └── README.md
@@ -72,11 +72,12 @@ loqa/
 
 ## 🛠️ Tech Stack
 
+- **Rust** (Axum web framework)
 - **ESP32-S3** (PlatformIO + ESP-IDF)
 - **Edge Impulse** (wake word inference)
-- **Python 3** (server logic)
-- **ALSA / PulseAudio** (audio output)
-- **MQTT / HTTP** (communication)
+- **Whisper.cpp / Coqui TTS** (offline STT/TTS)
+- **Rodio / ALSA** (audio output)
+- **HTTP / TCP** (communication)
 - **Optional LLM module** (future experimentation)
 
 ---
