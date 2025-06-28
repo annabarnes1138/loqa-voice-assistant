@@ -1,0 +1,14 @@
+# loqa/Cargo.toml
+
+[workspace]
+members = [
+    "bin",
+    "core",
+    "stt",
+    "nlp",
+    "tts",
+    "audio",
+    "loqa-hub",
+    "shared",
+]
+resolver = "3"
