@@ -1,10 +1,67 @@
-# Rust
-**/target
+# General
+*.log
+*.pyc
+__pycache__/
+.env
+.env.*
 
-# PlatformIO
-.pio
+# IDEs
 .vscode/
-.pioenvs/
-.pio/libdeps/
+.idea/
+*.code-workspace
 
+# OS
 .DS_Store
+Thumbs.db
+
+# Go
+hub/loqa-hub/bin/
+hub/loqa-hub/coverage.out
+hub/loqa-hub/**/*.test
+*.exe
+*.out
+*.test
+
+# Python
+hub/services/**/__pycache__/
+hub/services/**/.pytest_cache/
+hub/services/**/.mypy_cache/
+hub/services/**/.venv/
+hub/services/**/venv/
+hub/services/**/env/
+*.pkl
+*.pt
+*.whl
+
+# Docker
+**/data/
+**/tmp/
+**/logs/
+**/cache/
+
+# PlatformIO / ESP-IDF (puck firmware)
+.pio/
+build/
+sdkconfig.old
+sdkconfig.defaults
+firmware/.pio/
+firmware/.vscode/
+firmware/build/
+firmware/.env
+firmware/.pytest_cache/
+firmware/*.bin
+firmware/*.elf
+firmware/*.map
+
+# Audio / ML assets
+shared/audio_samples/**/*.wav
+shared/audio_samples/**/*.mp3
+shared/test_transcripts/**/*.json
+shared/models/**/*
+!shared/models/.keep
+
+# Node (just in case)
+node_modules/
+
+# Ignore Docker volumes if mounted
+volumes/

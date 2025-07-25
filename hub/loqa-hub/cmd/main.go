@@ -1,0 +1,36 @@
+package main
+
+import (
+	"log"
+	"os"
+
+	"github.com/annabarnes1138/loqa-voice-assistant/hub/loqa-hub/internal/server"
+)
+
+func main() {
+	port := getEnv("LOQA_HUB_PORT", "3000")
+	asrURL := getEnv("ASR_HOST", "http://localhost:5001")
+	intentURL := getEnv("INTENT_HOST", "http://localhost:5003")
+	ttsURL := getEnv("TTS_HOST", "http://localhost:5002")
+
+	cfg := server.Config{
+		Port:      port,
+		ASRURL:    asrURL,
+		IntentURL: intentURL,
+		TTSURL:    ttsURL,
+	}
+
+	srv := server.New(cfg)
+
+	log.Printf("🚀 loqa-hub listening on http://0.0.0.0:%s", port)
+	if err := srv.Start(); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
+}
+
+func getEnv(key string, fallback string) string {
+	if val, ok := os.LookupEnv(key); ok {
+		return val
+	}
+	return fallback
+}

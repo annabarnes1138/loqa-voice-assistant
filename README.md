@@ -10,12 +10,13 @@
 ### 🖥️ Loqa Hub (Server)
 A single backend node responsible for all heavy processing:
 
-- **Hardware:** Mini PC (e.g. Beelink SER5) running Rust-based Axum server
+- **Hardware:** Mini PC (e.g. Beelink SER5) running a Go-based orchestrator and Python microservices
 - **Responsibilities:**
   - Accepts wake word events from pucks
-  - Handles STT (via Whisper or similar)
-  - Performs intent parsing and command chaining
-  - Generates TTS responses (via Coqui or Silero)
+  - Routes audio to Python ASR service (Whisper)
+  - Sends transcript to intent parser (LLM)
+  - Executes chained commands
+  - Sends response text to Python TTS service
   - Streams audio response back to puck
 
 ### 🎙️ Loqa Lite (Puck)
@@ -47,6 +48,12 @@ Multiple embedded clients placed in rooms throughout the home:
 
 ---
 
+## 🧭 System Diagram
+
+![Loqa System Diagram](docs/loqa-system-diagram.png)
+
+---
+
 ## 🌱 Future Plans
 
 - Support for **NSL (Neuro-Symbolic Learning)** to allow Loqa to learn new skills from voice interactions
@@ -60,19 +67,34 @@ Multiple embedded clients placed in rooms throughout the home:
 ## 📦 Project Structure
 
 ```bash
-loqa/
-├── loqa-hub/           # Rust-based server (Axum, STT, NLP, TTS)
-├── puck-fw/            # ESP32 puck firmware (PlatformIO + C++)
-├── models/             # Edge Impulse wake word models
-├── docs/               # Diagrams, planning notes
-└── README.md
+loqa-voice-assistant/
+├── docker-compose.yml     # Orchestrates Go + Python services
+├── README.md
+├── .env                   # Optional shared config
+ 
+├── hub/                   # Backend server
+│   ├── loqa-hub/          # Go orchestrator (wake, chaining)
+│   │   ├── cmd/
+│   │   └── internal/
+│   ├── services/          # Python ASR, TTS, Intent services
+│   ├── tests/
+│   └── scripts/
+│
+├── puck/                  # Embedded client firmware
+│   ├── firmware/          # ESP-IDF / PlatformIO
+│   ├── hardware/          # Schematics, BOM
+│   └── tests/
+│
+├── shared/                # Prompts, transcripts, test audio
+└── tools/                 # CLI tools or puck simulators
 ```
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Rust** (Axum web framework)
+- **Go** (Orchestration, HTTP routing)
+- **Python** (ASR, intent parsing, TTS)
 - **ESP32-S3** (PlatformIO + ESP-IDF)
 - **Edge Impulse** (wake word inference)
 - **Whisper.cpp / Coqui TTS** (offline STT/TTS)
@@ -90,3 +112,6 @@ TBD — likely MIT or Apache 2.0
 
 *Created by [Anna Barnes](https://www.linkedin.com/in/annabethbarnes) to bring voice assistance back to the edge—where it belongs.*
 
+---
+
+You can replace `docs/loqa-system-diagram.png` with your actual file path or diagram export later.

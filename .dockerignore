@@ -1,0 +1,51 @@
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pkl
+*.pt
+*.whl
+*.egg-info
+.env
+.env.*
+
+# Go
+*.exe
+*.test
+*.out
+*.log
+coverage.out
+bin/
+
+# Docker
+.dockerignore
+docker-compose.yml
+*.swp
+
+# PlatformIO / ESP-IDF
+.pio/
+build/
+sdkconfig.old
+firmware/.pio/
+firmware/build/
+firmware/*.bin
+firmware/*.elf
+firmware/*.map
+
+# Node
+node_modules/
+
+# Large data (optional, adjust based on actual use)
+shared/audio_samples/
+shared/models/
+shared/test_transcripts/
+volumes/
