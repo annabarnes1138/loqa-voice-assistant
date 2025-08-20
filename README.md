@@ -17,11 +17,15 @@
 cd deployments
 docker-compose up -d
 
+# Run the test puck for voice interaction
+./tools/run-test-puck.sh
+
 # System will automatically:
 # - Download Llama 3.2 3B model via Ollama
 # - Compile Whisper.cpp for speech recognition
 # - Start NATS message bus
 # - Launch hub and device services
+# - Build and run test puck for voice input
 ```
 
 **That's it!** The system includes:
@@ -29,6 +33,7 @@ docker-compose up -d
 - 🧠 **AI command parsing** (Llama 3.2 3B via Ollama)
 - 📡 **Message bus** (NATS)
 - 🏠 **Device simulation** (Smart lights, audio)
+- 🎤 **Test puck** (Go-based audio capture and streaming)
 
 ## ✨ Key Features
 
@@ -107,8 +112,12 @@ loqa-voice-assistant/
 ├── proto/                # gRPC definitions
 │   ├── audio.proto       # Audio streaming protocol
 │   └── go/               # Generated Go code
-├── puck/                 # Edge audio devices (future)
-│   └── firmware/         # ESP32 firmware
+├── puck/                 # Edge audio devices
+│   └── test-go/          # Go test puck implementation
+│       ├── cmd/main.go   # Test puck binary
+│       └── internal/     # Audio capture + gRPC client
+├── tools/                # Build and test scripts
+│   └── run-test-puck.sh  # Test puck runner
 └── docs/                 # Documentation
 ```
 
@@ -134,6 +143,14 @@ NATS_URL="nats://localhost:4222" go run ./cmd/device-service
 # Build everything
 go build -o loqa-hub ./cmd
 go build -o device-service ./cmd/device-service
+
+# Build and run test puck
+cd ../../puck/test-go
+go build -o test-puck ./cmd
+./test-puck --hub localhost:50051 --id test-puck-001
+
+# Or use the convenience script
+./tools/run-test-puck.sh
 ```
 
 ### Docker Services
@@ -199,6 +216,26 @@ nats pub loqa.devices.commands.lights '{
 }' --server=nats://localhost:4222
 ```
 
+### Voice Testing with Test Puck
+
+```bash
+# Run the test puck (requires PortAudio)
+./tools/run-test-puck.sh
+
+# Custom configuration
+./tools/run-test-puck.sh --hub localhost:50051 --id my-puck
+
+# Install PortAudio if needed:
+# macOS: brew install portaudio
+# Ubuntu: sudo apt-get install portaudio19-dev
+```
+
+**Voice Testing Tips:**
+- Speak clearly and wait for "🎤 Voice detected!"
+- Use wake word: "Hey Loqa" for better detection
+- Try simple commands first: "Hello" or "Turn on lights"
+- Check microphone permissions if audio capture fails
+
 ## 🛣️ Roadmap
 
 ### Current Status ✅
@@ -208,6 +245,8 @@ nats pub loqa.devices.commands.lights '{
 - [x] Docker containerization
 - [x] Device simulation and control
 - [x] gRPC audio streaming foundation
+- [x] Go test puck with PortAudio integration
+- [x] Wake word detection and voice activity detection
 
 ### Next Phase
 - [ ] ESP32-S3 puck firmware with wake word detection
