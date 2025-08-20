@@ -10,6 +10,7 @@ import (
 func main() {
 	port := getEnv("LOQA_HUB_PORT", "3000")
 	grpcPort := getEnv("LOQA_GRPC_PORT", "50051")
+	modelPath := getEnv("MODEL_PATH", "/tmp/whisper.cpp/models/ggml-tiny.bin")
 	asrURL := getEnv("ASR_HOST", "http://localhost:5001")
 	intentURL := getEnv("INTENT_HOST", "http://localhost:5003")
 	ttsURL := getEnv("TTS_HOST", "http://localhost:5002")
@@ -17,6 +18,7 @@ func main() {
 	cfg := server.Config{
 		Port:      port,
 		GRPCPort:  grpcPort,
+		ModelPath: modelPath,
 		ASRURL:    asrURL,
 		IntentURL: intentURL,
 		TTSURL:    ttsURL,

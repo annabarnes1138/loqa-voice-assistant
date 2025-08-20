@@ -14,6 +14,7 @@ import (
 type Config struct {
 	Port      string
 	GRPCPort  string
+	ModelPath string
 	ASRURL    string
 	IntentURL string
 	TTSURL    string
@@ -31,7 +32,7 @@ func New(cfg Config) *Server {
 
 	// Create gRPC server and audio service
 	grpcServer := grpc.NewServer()
-	audioService, err := grpcservice.NewAudioService()
+	audioService, err := grpcservice.NewAudioService(cfg.ModelPath)
 	if err != nil {
 		log.Fatalf("Failed to create audio service: %v", err)
 	}
