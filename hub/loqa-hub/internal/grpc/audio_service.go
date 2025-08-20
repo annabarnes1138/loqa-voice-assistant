@@ -4,9 +4,11 @@ import (
 	"io"
 	"log"
 	"os"
+	"time"
 
 	pb "loqa-voice-assistant/proto/go"
 	"github.com/annabarnes1138/loqa-voice-assistant/hub/loqa-hub/internal/llm"
+	"github.com/annabarnes1138/loqa-voice-assistant/hub/loqa-hub/internal/messaging"
 )
 
 // AudioService implements the gRPC AudioService
@@ -14,6 +16,7 @@ type AudioService struct {
 	pb.UnimplementedAudioServiceServer
 	transcriber    *llm.WhisperTranscriber
 	commandParser  *llm.CommandParser
+	natsService    *messaging.NATSService
 }
 
 // NewAudioService creates a new audio service
@@ -36,6 +39,22 @@ func NewAudioService(modelPath string) (*AudioService, error) {
 
 	commandParser := llm.NewCommandParser(ollamaURL, ollamaModel)
 	
+	// Initialize NATS service
+	natsService, err := messaging.NewNATSService()
+	if err != nil {
+		log.Printf("⚠️  Warning: Failed to create NATS service: %v", err)
+	}
+
+	// Connect to NATS (non-blocking)
+	go func() {
+		if natsService != nil {
+			if err := natsService.Connect(); err != nil {
+				log.Printf("⚠️  Warning: Cannot connect to NATS: %v", err)
+				log.Println("🔄 Events will not be published to message bus")
+			}
+		}
+	}()
+
 	// Test connection to Ollama (non-blocking)
 	go func() {
 		if err := commandParser.TestConnection(); err != nil {
@@ -47,6 +66,7 @@ func NewAudioService(modelPath string) (*AudioService, error) {
 	return &AudioService{
 		transcriber:   transcriber,
 		commandParser: commandParser,
+		natsService:   natsService,
 	}, nil
 }
 
@@ -114,6 +134,33 @@ func (as *AudioService) StreamAudio(stream pb.AudioService_StreamAudioServer) er
 			log.Printf("🧠 Parsed command - Intent: %s, Entities: %v, Confidence: %.2f", 
 				command.Intent, command.Entities, command.Confidence)
 
+			// Publish command event to NATS
+			if as.natsService != nil && as.natsService.IsConnected() {
+				commandEvent := &messaging.CommandEvent{
+					PuckID:        chunk.PuckId,
+					Transcription: transcription,
+					Intent:        command.Intent,
+					Entities:      command.Entities,
+					Confidence:    command.Confidence,
+					Timestamp:     time.Now().UnixNano(),
+					RequestID:     chunk.PuckId, // Using puck ID as request ID for now
+				}
+
+				if err := as.natsService.PublishVoiceCommand(commandEvent); err != nil {
+					log.Printf("⚠️  Warning: Failed to publish voice command to NATS: %v", err)
+				}
+
+				// If this is a device command, also publish a device command event
+				if as.isDeviceCommand(command.Intent) {
+					deviceCommand := as.createDeviceCommand(commandEvent)
+					if deviceCommand != nil {
+						if err := as.natsService.PublishDeviceCommand(deviceCommand); err != nil {
+							log.Printf("⚠️  Warning: Failed to publish device command to NATS: %v", err)
+						}
+					}
+				}
+			}
+
 			// Send response back to puck
 			response := &pb.AudioResponse{
 				RequestId:     chunk.PuckId, // Use puck ID as request ID
@@ -145,4 +192,78 @@ func bytesToFloat32Array(data []byte) []float32 {
 		samples[i] = float32(val) / 32767.0
 	}
 	return samples
+}
+
+// isDeviceCommand checks if an intent represents a device command
+func (as *AudioService) isDeviceCommand(intent string) bool {
+	deviceIntents := map[string]bool{
+		"turn_on":  true,
+		"turn_off": true,
+		"dim":      true,
+		"brighten": true,
+		"play":     true,
+		"stop":     true,
+		"pause":    true,
+		"volume":   true,
+	}
+	return deviceIntents[intent]
+}
+
+// createDeviceCommand creates a device command from a voice command
+func (as *AudioService) createDeviceCommand(commandEvent *messaging.CommandEvent) *messaging.DeviceCommandEvent {
+	deviceType := as.extractDeviceType(commandEvent.Entities)
+	if deviceType == "" {
+		// Default to lights if no specific device mentioned
+		deviceType = "lights"
+	}
+
+	action := as.mapIntentToAction(commandEvent.Intent)
+	if action == "" {
+		return nil
+	}
+
+	return &messaging.DeviceCommandEvent{
+		CommandEvent: *commandEvent,
+		DeviceType:   deviceType,
+		DeviceID:     commandEvent.Entities["device_id"],
+		Location:     commandEvent.Entities["location"],
+		Action:       action,
+	}
+}
+
+// extractDeviceType extracts device type from entities
+func (as *AudioService) extractDeviceType(entities map[string]string) string {
+	if device, exists := entities["device"]; exists {
+		// Map common device names to types
+		deviceMap := map[string]string{
+			"lights": "lights",
+			"light":  "lights",
+			"lamp":   "lights",
+			"music":  "audio",
+			"audio":  "audio",
+			"sound":  "audio",
+			"tv":     "tv",
+			"television": "tv",
+		}
+		if deviceType, found := deviceMap[device]; found {
+			return deviceType
+		}
+		return device
+	}
+	return ""
+}
+
+// mapIntentToAction maps voice intents to device actions
+func (as *AudioService) mapIntentToAction(intent string) string {
+	actionMap := map[string]string{
+		"turn_on":  "on",
+		"turn_off": "off",
+		"dim":      "dim",
+		"brighten": "brighten",
+		"play":     "play",
+		"stop":     "stop",
+		"pause":    "pause",
+		"volume":   "volume",
+	}
+	return actionMap[intent]
 }
