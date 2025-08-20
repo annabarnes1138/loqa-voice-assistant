@@ -34,14 +34,20 @@ services:
       - "3000:3000"
       - "50051:50051"
     environment:
-      - LOQA_HUB_PORT=3000
+      - LOQA_HOST=0.0.0.0
+      - LOQA_PORT=3000
       - LOQA_GRPC_PORT=50051
-      - MODEL_PATH=/tmp/whisper.cpp/models/ggml-tiny.bin
+      - WHISPER_MODEL_PATH=/models/ggml-base.en.bin
+      - WHISPER_LANGUAGE=en
       - OLLAMA_URL=http://ollama:11434
       - OLLAMA_MODEL=llama3.2:3b
       - NATS_URL=nats://nats:4222
+      - NATS_SUBJECT=loqa.commands
+      - LOG_LEVEL=info
+      - LOG_FORMAT=json
     volumes:
       - hub-logs:/app/logs
+      - whisper-models:/models
     restart: unless-stopped
     depends_on:
       - nats
@@ -72,3 +78,4 @@ services:
 volumes:
   hub-logs:
   ollama-data:
+  whisper-models:

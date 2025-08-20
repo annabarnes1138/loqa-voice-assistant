@@ -13,9 +13,9 @@ RUN git clone https://github.com/ggerganov/whisper.cpp.git
 WORKDIR /tmp/whisper.cpp
 RUN make
 
-# Download tiny model
+# Download base English model
 RUN mkdir -p models && \
-    wget -O models/ggml-tiny.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin
+    wget -O models/ggml-base.en.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin
 
 # Go builder stage
 FROM golang:1.24-alpine AS go-builder
@@ -61,14 +61,20 @@ COPY --from=go-builder /app/hub/loqa-hub/loqa-hub .
 
 # Copy whisper.cpp and models
 COPY --from=whisper-builder /tmp/whisper.cpp /tmp/whisper.cpp
+COPY --from=whisper-builder /tmp/whisper.cpp/models/ggml-base.en.bin /models/
 
-# Set environment variables
-ENV MODEL_PATH=/tmp/whisper.cpp/models/ggml-tiny.bin
+# Set default environment variables
+ENV WHISPER_MODEL_PATH=/models/ggml-base.en.bin
+ENV WHISPER_LANGUAGE=en
 ENV OLLAMA_URL=http://ollama:11434
 ENV OLLAMA_MODEL=llama3.2:3b
 ENV NATS_URL=nats://nats:4222
-ENV LOQA_HUB_PORT=3000
+ENV NATS_SUBJECT=loqa.commands
+ENV LOQA_HOST=0.0.0.0
+ENV LOQA_PORT=3000
 ENV LOQA_GRPC_PORT=50051
+ENV LOG_LEVEL=info
+ENV LOG_FORMAT=json
 
 # Expose ports
 EXPOSE 3000 50051
