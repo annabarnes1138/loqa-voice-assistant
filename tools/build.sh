@@ -6,9 +6,16 @@ set -e
 
 echo "🔧 Building Loqa Voice Assistant..."
 
-# Set whisper.cpp library paths
-export CGO_CFLAGS="-I/tmp/whisper.cpp/include -I/tmp/whisper.cpp/ggml/include"
-export CGO_LDFLAGS="-L/tmp/whisper.cpp/build/src -L/tmp/whisper.cpp/build/ggml/src -L/tmp/whisper.cpp/build/ggml/src/ggml-metal -L/tmp/whisper.cpp/build/ggml/src/ggml-blas -lwhisper -lggml"
+# Set whisper.cpp library paths (if available)
+if [ -d "/tmp/whisper.cpp" ]; then
+    export CGO_ENABLED=1
+    export CGO_CFLAGS="-I/tmp/whisper.cpp/include"
+    export CGO_LDFLAGS="-L/tmp/whisper.cpp -lwhisper -lm -lstdc++"
+    echo "🧠 Using local Whisper.cpp installation"
+else
+    echo "⚠️  Whisper.cpp not found at /tmp/whisper.cpp - build may fail"
+    echo "   Run Docker build for full Whisper integration"
+fi
 
 # Build protobuf module
 echo "📦 Building protobuf module..."
@@ -17,17 +24,17 @@ go mod tidy
 
 # Build hub service
 echo "🏢 Building hub service..."
-cd ../../hub/loqa-hub
+cd ../../hub
 go mod tidy
-go build -o ../../bin/loqa-hub ./cmd
+go build -o ../bin/loqa-hub ./cmd
 
 # Build device service
 echo "🔧 Building device service..."
-go build -o ../../bin/device-service ./cmd/device-service
+go build -o ../bin/device-service ./cmd/device-service
 
 # Build test puck (if needed for testing)
 echo "🎤 Building test puck..."
-cd ../../puck/test-go
+cd ../puck/test-go
 go mod tidy
 go build -o ../../bin/test-puck ./cmd
 

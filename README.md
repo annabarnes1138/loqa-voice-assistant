@@ -274,7 +274,3 @@ TBD — likely MIT or Apache 2.0
 ---
 
 *Created by [Anna Barnes](https://www.linkedin.com/in/annabethbarnes) to bring voice assistance back to the edge—where it belongs.*
-
----
-
-You can replace `docs/loqa-system-diagram.png` with your actual file path or diagram export later.
