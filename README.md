@@ -1,106 +1,230 @@
 ![loqa_social_preview_padded_1280x640](https://github.com/user-attachments/assets/99016e57-ace5-4140-a4f3-c49262f83253)
 # Loqa – A Local-First Voice Assistant
 
-**Loqa** (formerly *Rosey*) is a privacy-first, local-only voice assistant that operates entirely offline. It enables natural language interaction without relying on cloud infrastructure, commercial APIs, or internet connectivity—designed from the ground up to be private, modular, and extensible.
+**Loqa** is a privacy-first, local-only voice assistant that operates entirely offline. It features real speech recognition, AI-powered command parsing, and event-driven architecture—designed from the ground up to be private, intelligent, and extensible.
 
----
+## 🚀 Quick Start
 
-## 🧱 System Architecture
+### Prerequisites
 
-### 🖥️ Loqa Hub (Server)
-A single backend node responsible for all heavy processing:
+- Docker & Docker Compose
+- Go 1.24+ (for local development)
 
-- **Hardware:** Mini PC (e.g. Beelink SER5) running a Go-based orchestrator and Python microservices
-- **Responsibilities:**
-  - Accepts wake word events from pucks
-  - Routes audio to Python ASR service (Whisper)
-  - Sends transcript to intent parser (LLM)
-  - Executes chained commands
-  - Sends response text to Python TTS service
-  - Streams audio response back to puck
-
-### 🎙️ Loqa Lite (Puck)
-Multiple embedded clients placed in rooms throughout the home:
-
-- **Hardware:** ESP32-S3-based puck + microphone array
-- **Responsibilities:**
-  - Local wake word detection (Edge Impulse)
-  - Record audio on trigger and forward to Loqa Prime
-  - Playback audio response from the server
-  - Designed for near-room-scale voice capture
-
----
-
-## 🔄 Communication Flow
-
-```text
-[ Loqa Lite ]
- └─> Wake word detected locally
- └─> Record request audio
- └─> Transmit to Loqa Prime via Wi-Fi
-
-[ Loqa Prime ]
- └─> Convert speech to text
- └─> Parse intent and execute command chain
- └─> Generate audio response
- └─> Send audio back to Loqa Lite for playback
-```
-
----
-
-## 🧭 System Diagram
-
-![Loqa System Diagram](docs/loqa-system-diagram.png)
-
----
-
-## 🌱 Future Plans
-
-- Support for **NSL (Neuro-Symbolic Learning)** to allow Loqa to learn new skills from voice interactions
-- Multi-room context awareness
-- Embedded user identification (voice fingerprinting)
-- Offline skill scripting from natural language
-- Optional local app for configuration and debugging
-
----
-
-## 📦 Project Structure
+### Launch Complete System
 
 ```bash
-loqa-voice-assistant/
-├── docker-compose.yml     # Orchestrates Go + Python services
-├── README.md
-├── .env                   # Optional shared config
- 
-├── hub/                   # Backend server
-│   ├── loqa-hub/          # Go orchestrator (wake, chaining)
-│   │   ├── cmd/
-│   │   └── internal/
-│   ├── services/          # Python ASR, TTS, Intent services
-│   ├── tests/
-│   └── scripts/
-│
-├── puck/                  # Embedded client firmware
-│   ├── firmware/          # ESP-IDF / PlatformIO
-│   ├── hardware/          # Schematics, BOM
-│   └── tests/
-│
-├── shared/                # Prompts, transcripts, test audio
-└── tools/                 # CLI tools or puck simulators
+# Start all services (NATS, Ollama, Hub, Device Service)
+cd deployments
+docker-compose up -d
+
+# System will automatically:
+# - Download Llama 3.2 3B model via Ollama
+# - Compile Whisper.cpp for speech recognition
+# - Start NATS message bus
+# - Launch hub and device services
 ```
 
----
+**That's it!** The system includes:
+- 🗣️ **Real speech recognition** (Whisper.cpp)
+- 🧠 **AI command parsing** (Llama 3.2 3B via Ollama)
+- 📡 **Message bus** (NATS)
+- 🏠 **Device simulation** (Smart lights, audio)
+
+## ✨ Key Features
+
+### Real Speech Processing
+- **Whisper.cpp integration** - State-of-the-art speech-to-text
+- **gRPC audio streaming** - Real-time voice capture from pucks
+- **Wake word detection** - "Hey Loqa" activation
+- **Voice activity detection** - Automatic speech start/stop
+
+### LLM-Powered Understanding
+- **Natural language processing** - Powered by Llama 3.2 3B via Ollama
+- **Intent classification** - Understands user goals automatically
+- **Entity extraction** - Identifies devices, locations, actions
+- **Contextual responses** - Generates natural conversation
+
+### Event-Driven Architecture  
+- **NATS message bus** - Reliable pub/sub messaging
+- **Distributed services** - Microservices with Docker
+- **Real-time events** - Voice commands → NATS → Device actions
+- **Scalable design** - Add new services and device types easily
+
+### Local-First Design
+- **No cloud dependencies** - Everything runs locally
+- **Privacy-focused** - Voice data never leaves your device
+- **Offline capable** - Works without internet connection
+- **Fast response** - No network latency
+
+## 🏗️ Architecture
+
+```mermaid
+graph TB
+    P[🎤 Test Puck] --> H[🧠 Hub Service]
+    H --> W[📝 Whisper STT]
+    H --> L[🤖 Ollama LLM]
+    H --> N[📡 NATS Message Bus]
+    N --> D[🏠 Device Service]
+    D --> D1[💡 Smart Lights]
+    D --> D2[🎵 Audio Systems]
+    D --> D3[📺 Other Devices]
+```
+
+### Components
+
+- **Hub Service**: Central processing with gRPC, Whisper STT, and LLM command parsing
+- **Device Service**: Smart home device simulation and control
+- **NATS Server**: Message bus for event-driven communication
+- **Ollama**: Local LLM inference (Llama 3.2 3B)
+- **Docker Stack**: All services containerized with health checks
+
+### Message Flow
+
+1. **Voice Input** → Puck captures audio and streams via gRPC
+2. **Speech Recognition** → Whisper converts speech to text
+3. **Intent Classification** → LLM determines user intent and entities
+4. **Event Publishing** → Commands published to NATS message bus
+5. **Device Execution** → Device service receives and executes commands
+6. **Response Flow** → Status updates flow back through the system
+
+## 📂 Project Structure
+
+```
+loqa-voice-assistant/
+├── deployments/           # Docker configuration
+│   ├── docker-compose.yml
+│   ├── Dockerfile.hub     # Hub service + Whisper.cpp
+│   └── Dockerfile.device-service
+├── hub/loqa-hub/         # Go hub service
+│   ├── cmd/              # Service binaries
+│   │   ├── main.go       # Hub service (gRPC + HTTP)
+│   │   └── device-service/ # Device controller
+│   ├── internal/         # Internal packages
+│   │   ├── grpc/         # gRPC audio service
+│   │   ├── llm/          # Whisper + LLM integration
+│   │   ├── messaging/    # NATS pub/sub
+│   │   └── server/       # HTTP server
+├── proto/                # gRPC definitions
+│   ├── audio.proto       # Audio streaming protocol
+│   └── go/               # Generated Go code
+├── puck/                 # Edge audio devices (future)
+│   └── firmware/         # ESP32 firmware
+└── docs/                 # Documentation
+```
+
+## 🛠️ Development
+
+### Local Development
+
+```bash
+# Start infrastructure (NATS, Ollama)
+cd deployments
+docker-compose up -d nats ollama
+
+# Run hub locally
+cd hub/loqa-hub
+export MODEL_PATH="/tmp/whisper.cpp/models/ggml-tiny.bin"
+export OLLAMA_URL="http://localhost:11434"
+export NATS_URL="nats://localhost:4222"
+go run ./cmd
+
+# Run device service locally  
+NATS_URL="nats://localhost:4222" go run ./cmd/device-service
+
+# Build everything
+go build -o loqa-hub ./cmd
+go build -o device-service ./cmd/device-service
+```
+
+### Docker Services
+
+```bash
+# View all services
+docker-compose ps
+
+# View logs
+docker-compose logs -f loqa-hub
+docker-compose logs -f device-service
+docker-compose logs -f ollama
+
+# Restart a service
+docker-compose restart loqa-hub
+```
+
+## 🔧 Configuration
+
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `LOQA_HUB_PORT` | `3000` | HTTP server port |
+| `LOQA_GRPC_PORT` | `50051` | gRPC server port |
+| `MODEL_PATH` | `/tmp/whisper.cpp/models/ggml-tiny.bin` | Whisper model file |
+| `OLLAMA_URL` | `http://ollama:11434` | Ollama API endpoint |
+| `OLLAMA_MODEL` | `llama3.2:3b` | LLM model to use |
+| `NATS_URL` | `nats://nats:4222` | NATS server URL |
+
+### NATS Subjects
+
+| Subject | Description |
+|---------|-------------|
+| `loqa.voice.commands` | Raw voice command events |
+| `loqa.devices.commands.*` | Device-specific commands |
+| `loqa.devices.responses` | Device execution results |
+
+## 🧪 Testing
+
+### Monitor NATS Messages
+
+```bash
+# Install NATS CLI
+go install github.com/nats-io/natscli/nats@latest
+
+# Monitor all voice commands
+nats sub "loqa.voice.commands" --server=nats://localhost:4222
+
+# Monitor device commands  
+nats sub "loqa.devices.commands.*" --server=nats://localhost:4222
+```
+
+### Manual Testing
+
+```bash
+# Send test device command
+nats pub loqa.devices.commands.lights '{
+  "device_type": "lights",
+  "action": "on", 
+  "location": "kitchen",
+  "request_id": "test-123"
+}' --server=nats://localhost:4222
+```
+
+## 🛣️ Roadmap
+
+### Current Status ✅
+- [x] Real speech recognition (Whisper.cpp)
+- [x] LLM-based command parsing (Ollama + Llama)
+- [x] Event-driven architecture (NATS)
+- [x] Docker containerization
+- [x] Device simulation and control
+- [x] gRPC audio streaming foundation
+
+### Next Phase
+- [ ] ESP32-S3 puck firmware with wake word detection
+- [ ] Real smart home device integration (HomeKit, Zigbee)
+- [ ] Multi-room audio coordination
+- [ ] Context memory and conversation state
+- [ ] Custom skill development framework
 
 ## 🛠️ Tech Stack
 
-- **Go** (Orchestration, HTTP routing)
-- **Python** (ASR, intent parsing, TTS)
-- **ESP32-S3** (PlatformIO + ESP-IDF)
-- **Edge Impulse** (wake word inference)
-- **Whisper.cpp / Coqui TTS** (offline STT/TTS)
-- **Rodio / ALSA** (audio output)
-- **HTTP / TCP** (communication)
-- **Optional LLM module** (future experimentation)
+- **Go** (gRPC services, HTTP APIs, concurrency)
+- **Whisper.cpp** (Offline speech-to-text)
+- **Ollama + Llama 3.2** (Local LLM inference)
+- **NATS** (Event-driven messaging)
+- **Docker** (Containerization)
+- **gRPC** (Real-time audio streaming)
+- **ESP32-S3** (Future: edge puck hardware)
 
 ---
 
